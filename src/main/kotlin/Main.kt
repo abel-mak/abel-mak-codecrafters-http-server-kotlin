@@ -16,6 +16,11 @@ fun main() {
         try {
             val socket =  serverSocket.accept();
             println("accepted new connection")
+            
+            val outputStream = socket.getOutputStream();
+            outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
+            outputStream.close()
+
         }
         catch (e: Exception) {
             println(e.message); 
