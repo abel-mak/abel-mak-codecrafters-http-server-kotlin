@@ -16,16 +16,39 @@ fun main() {
         try {
             val socket =  serverSocket.accept();
             println("accepted new connection")
-            
-            val outputStream = socket.getOutputStream();
-            outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
-            outputStream.close()
+        
+            val inputStream = socket.getInputStream();
+            var totalBytes = ByteArray(0);
+            while (true) {
+                val buff = ByteArray(64);
+                println("->") 
+                if (inputStream.available() != 0) {
+                    inputStream.read(buff, 0, 64);
+                    totalBytes += buff
+                }
+                else
+                    break;
+            }
+            val requestHeaderArr = totalBytes.toString(Charsets.UTF_8).split("\r\n");
+            if (requestHeaderArr.first().startsWith("GET")) {
+                val reqFieldArr = requestHeaderArr.first().split(' ');
+                if (reqFieldArr.count() == 3) {
+                    val path = reqFieldArr[1];
+                    val outputStream = socket.getOutputStream();
+                    if (path == "/") {
+                        outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
+                    } 
+                    else {
+                         outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
+                    }
+                    outputStream.close()
+                }
+            }
 
         }
         catch (e: Exception) {
-            println(e.message); 
+            println("\nexecption occured ${e.message}"); 
         }
     }
-		
-    // serverSocket.accept() // Wait for connection from client.
+
 }
