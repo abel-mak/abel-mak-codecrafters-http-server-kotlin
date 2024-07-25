@@ -21,7 +21,6 @@ fun main() {
             var totalBytes = ByteArray(0);
             while (true) {
                 val buff = ByteArray(64);
-                println("->") 
                 if (inputStream.available() != 0) {
                     inputStream.read(buff, 0, 64);
                     totalBytes += buff
@@ -38,6 +37,11 @@ fun main() {
                     if (path == "/") {
                         outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
                     } 
+                    else if (path.startsWith("/echo") == true) {
+                        val message = path.replace("/echo/", "") ;
+                        
+                        outputStream.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${message.count()}\r\n\r\n$message".toByteArray());
+                    }
                     else {
                          outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
                     }
