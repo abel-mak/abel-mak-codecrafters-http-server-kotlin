@@ -1,4 +1,15 @@
 import java.net.ServerSocket;
+import java.io.OutputStream;
+
+fun okResponse(outputStream: OutputStream, body: String = "") {
+    val response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${body.count()}\r\n\r\n$body"
+    outputStream.write(response.toByteArray());
+}
+
+fun notFoundResponse(outputStream: OutputStream) {
+   outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
+}
+
 
 fun main() {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -29,6 +40,13 @@ fun main() {
                     break;
             }
             val requestHeaderArr = totalBytes.toString(Charsets.UTF_8).split("\r\n");
+            val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
+
+            for (item in requestHeaderArr) {
+                if (item.startsWith("User-Agent") == true) {
+                        requestHeaderMap["User-Agent"] = item.replace("User-Agent: ", "");
+                }
+            }
             if (requestHeaderArr.first().startsWith("GET")) {
                 val reqFieldArr = requestHeaderArr.first().split(' ');
                 if (reqFieldArr.count() == 3) {
@@ -38,12 +56,15 @@ fun main() {
                         outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
                     } 
                     else if (path.startsWith("/echo") == true) {
-                        val message = path.replace("/echo/", "") ;
+                        val message = path.replace("/echo/", "");
                         
-                        outputStream.write("HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${message.count()}\r\n\r\n$message".toByteArray());
+                        okResponse(outputStream, message);
+                    }
+                    else if (path.startsWith("/user-agent")) {
+                        okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
                     }
                     else {
-                         outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
+                        notFoundResponse(outputStream); 
                     }
                     outputStream.close()
                 }
