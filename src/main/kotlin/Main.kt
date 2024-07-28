@@ -12,6 +12,7 @@ fun notFoundResponse(outputStream: OutputStream) {
 }
 
 fun handleConnection(socket: Socket) {
+    Thread.sleep(10_000);
     val inputStream = socket.getInputStream();
     var totalBytes = ByteArray(0);
     while (true) {
