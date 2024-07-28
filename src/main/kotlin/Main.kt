@@ -73,7 +73,7 @@ fun main() {
                 val socket =  serverSocket.accept();
                 println("accepted new connection")
             
-                Thread( {
+                Thread(Runnable {
                         handleConnection(socket);
                 }).start()                
 
