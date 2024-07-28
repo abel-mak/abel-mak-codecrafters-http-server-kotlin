@@ -15,9 +15,9 @@ fun handleConnection(socket: Socket) {
     val inputStream = socket.getInputStream();
     var totalBytes = ByteArray(0);
     while (true) {
-        val buff = ByteArray(64);
+        val buff = ByteArray(100);
         if (inputStream.available() != 0) {
-            inputStream.read(buff, 0, 64);
+            inputStream.read(buff, 0, 100);
             totalBytes += buff
         }
         else
@@ -73,9 +73,9 @@ fun main() {
                 val socket =  serverSocket.accept();
                 println("accepted new connection")
             
-                Thread(Runnable {
+                thread {
                         handleConnection(socket);
-                }).start()                
+                }                
 
             }
             catch (e: Exception) {
