@@ -38,7 +38,7 @@ fun handleConnection(socket: Socket) {
             val path = reqFieldArr[1];
             val outputStream = socket.getOutputStream();
             if (path == "/") {
-                outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
+                okResponse(outputStream, "");
             } 
             else if (path.startsWith("/echo") == true) {
                 val message = path.replace("/echo/", "");
