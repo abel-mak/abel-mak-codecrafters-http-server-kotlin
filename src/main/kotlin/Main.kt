@@ -11,50 +11,48 @@ fun notFoundResponse(outputStream: OutputStream) {
    outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
 }
 
-class HandleConnection(private val socket: Socket) : Runnable {
-    override fun run() {
-        val inputStream = socket.getInputStream();
-        var totalBytes = ByteArray(0);
-        while (true) {
-            val buff = ByteArray(64);
-            if (inputStream.available() != 0) {
-                inputStream.read(buff, 0, 64);
-                totalBytes += buff
-            }
-            else
-                break;
+fun handleConnection(socket: Socket) {
+    val inputStream = socket.getInputStream();
+    var totalBytes = ByteArray(0);
+    while (true) {
+        val buff = ByteArray(64);
+        if (inputStream.available() != 0) {
+            inputStream.read(buff, 0, 64);
+            totalBytes += buff
         }
-        val requestHeaderArr = totalBytes.toString(Charsets.UTF_8).split("\r\n");
-        val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
+        else
+            break;
+    }
+    val requestHeaderArr = totalBytes.toString(Charsets.UTF_8).split("\r\n");
+    val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
 
-        for (item in requestHeaderArr) {
-            if (item.startsWith("User-Agent") == true) {
-                requestHeaderMap["User-Agent"] = item.replace("User-Agent: ", "");
-            }
+    for (item in requestHeaderArr) {
+        if (item.startsWith("User-Agent") == true) {
+            requestHeaderMap["User-Agent"] = item.replace("User-Agent: ", "");
         }
-        if (requestHeaderArr.first().startsWith("GET")) {
-            val reqFieldArr = requestHeaderArr.first().split(' ');
-            if (reqFieldArr.count() == 3) {
-                val path = reqFieldArr[1];
-                val outputStream = socket.getOutputStream();
-                if (path == "/") {
-                    okResponse(outputStream, "");
-                } 
-                else if (path.startsWith("/echo") == true) {
-                    val message = path.replace("/echo/", "");
+    }
+    if (requestHeaderArr.first().startsWith("GET")) {
+        val reqFieldArr = requestHeaderArr.first().split(' ');
+        if (reqFieldArr.count() == 3) {
+            val path = reqFieldArr[1];
+            val outputStream = socket.getOutputStream();
+            if (path == "/") {
+                outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
+            } 
+            else if (path.startsWith("/echo") == true) {
+                val message = path.replace("/echo/", "");
 
-                    okResponse(outputStream, message);
-                }
-                else if (path.startsWith("/user-agent")) {
-                    okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
-                }
-                else {
-                    notFoundResponse(outputStream); 
-                }
-                outputStream.close()
+                okResponse(outputStream, message);
             }
+            else if (path.startsWith("/user-agent")) {
+                okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
+            }
+            else {
+                notFoundResponse(outputStream); 
+            }
+            outputStream.close()
+            socket.close();
         }
-
     }
 }
 
@@ -74,8 +72,11 @@ fun main() {
             try {
                 val socket =  serverSocket.accept();
                 println("accepted new connection")
+            
+                thread {
+                        handleConnection(socket);
+                }                
 
-                Thread(HandleConnection(socket)).start();
             }
             catch (e: Exception) {
                 println("\nexecption occured ${e.message}"); 
