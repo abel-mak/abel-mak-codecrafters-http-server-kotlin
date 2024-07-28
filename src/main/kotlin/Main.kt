@@ -73,9 +73,9 @@ fun main() {
                 val socket =  serverSocket.accept();
                 println("accepted new connection")
             
-                Thread(Runnable {
+                Thread( {
                         handleConnection(socket);
-                })                
+                }).start()                
 
             }
             catch (e: Exception) {
