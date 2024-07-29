@@ -12,18 +12,17 @@ fun notFoundResponse(outputStream: OutputStream) {
 }
 
 fun handleConnection(socket: Socket) {
-    val inputStream = socket.getInputStream();
-    var totalBytes = ByteArray(0);
+    val bufferedReader: BufferedReader =
+        BufferedReader(InputStreamReader(socket.getInputStream()));
+    val requestHeaderArr: MutableList<String> = mutableListOf();
     while (true) {
-        val buff = ByteArray(100);
-        if (inputStream.available() != 0) {
-            inputStream.read(buff, 0, 100);
-            totalBytes += buff
+        val input = bufferedReader.readLine();
+        if (input.count() > 0) {
+            requestHeaderArr.add(input)
         }
         else
             break;
     }
-    val requestHeaderArr = totalBytes.toString(Charsets.UTF_8).split("\r\n");
     val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
 
     for (item in requestHeaderArr) {
@@ -51,7 +50,7 @@ fun handleConnection(socket: Socket) {
                 notFoundResponse(outputStream); 
             }
             outputStream.close()
-            socket.close();
+            //socket.close();
         }
     }
 }
@@ -72,10 +71,10 @@ fun main() {
             try {
                 val socket =  serverSocket.accept();
                 println("accepted new connection")
-            
-                thread {
+
+                    thread {
                         handleConnection(socket);
-                }                
+                    }                
 
             }
             catch (e: Exception) {
