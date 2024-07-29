@@ -12,17 +12,15 @@ fun notFoundResponse(outputStream: OutputStream) {
    outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
 }
 
-fun readFile(file: File): String? {
-    var result = "";
+fun sendFileResponse(outputStream: OutputStream, file: File) {
     if (file.exists()) {
-       // val lines = file.readLines();
-       // for (line in lines) {
-       //    result += line; 
-       // }
-        return file.readText();
+        val body = file.readText();
+        val response = "HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: ${body.count()}\r\n\r\n$body"
+            outputStream.write(response.toByteArray());
     }
-    return null;
-    
+    else {
+        notFoundResponse(outputStream);
+    }
 }
 
 fun handleConnection(directory: String?, socket: Socket) {
@@ -62,18 +60,12 @@ fun handleConnection(directory: String?, socket: Socket) {
             }
             else if (path.startsWith("/files/") == true) {
                 if (directory == null)
-                     notFoundResponse(outputStream);
+                    notFoundResponse(outputStream);
                 else {
 
                     val filePath: String = 
                         Paths.get(directory, path.replace("/files/", "")).toString();
-                    val fileContent = readFile(File(filePath))
-                        if (fileContent != null) {
-                            okResponse(outputStream, fileContent);
-                        }
-                        else {
-                            notFoundResponse(outputStream); 
-                        }
+                    sendFileResponse(outputStream, File(filePath));
                 }
 
             }
@@ -91,33 +83,33 @@ fun main(args: Array<String>) {
     println("Logs from your program will appear here!")
         var directory: String? = null;
 
-   for (i in 0 until args.count()) {
-       if (args[i] == "--directory" && i + 1 < args.count()) {
-           directory = args[i+1];
-           break;
-       }
-   }
-   // Uncomment this block to pass the first stage
-   var serverSocket = ServerSocket(4221)
-       //
-       //// Since the tester restarts your program quite often, setting SO_REUSEADDR
-       // // ensures that we don't run into 'Address already in use' errors
-       serverSocket.reuseAddress = true
-       //
+    for (i in 0 until args.count()) {
+        if (args[i] == "--directory" && i + 1 < args.count()) {
+            directory = args[i+1];
+            break;
+        }
+    }
+    // Uncomment this block to pass the first stage
+    var serverSocket = ServerSocket(4221)
+        //
+        //// Since the tester restarts your program quite often, setting SO_REUSEADDR
+        // // ensures that we don't run into 'Address already in use' errors
+        serverSocket.reuseAddress = true
+        //
 
-       while (true) {
-           try {
-               val socket =  serverSocket.accept();
-               println("accepted new connection")
+        while (true) {
+            try {
+                val socket =  serverSocket.accept();
+                println("accepted new connection")
 
-                   thread {
-                       handleConnection(directory, socket);
-                   }                
+                    thread {
+                        handleConnection(directory, socket);
+                    }                
 
-           }
-           catch (e: Exception) {
-               println("\nexecption occured ${e.message}"); 
-           }
-       }
+            }
+            catch (e: Exception) {
+                println("\nexecption occured ${e.message}"); 
+            }
+        }
 
 }
