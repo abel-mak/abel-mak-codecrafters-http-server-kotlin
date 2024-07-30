@@ -11,16 +11,15 @@ fun formulateOkResponse( acceptEncoding: String?, body: String): String {
             "gzip" -> {
                 responseBody = body;
                 headers.add("Content-Encoding: gzip");
-                headers.add("Content-Length: ${responseBody.count()}");
             };
             else -> {
                 responseBody = body;
-                headers.add("Content-Length: ${responseBody.count()}");
             }
         }
     }
     else 
         responseBody = body;
+    headers.add("Content-Length: ${responseBody.count()}");
     return "${headers.joinToString("\r\n")}\r\n\r\n$responseBody";
 }
 
