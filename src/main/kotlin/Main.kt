@@ -7,14 +7,13 @@ fun formulateOkResponse( acceptEncoding: String?, body: String): String {
     var headers = mutableListOf("HTTP/1.1 200 OK", "Content-Type: text/plain");
     var responseBody: String;
     if (acceptEncoding != null) {
-        when (acceptEncoding) {
-            "gzip" -> {
-                responseBody = body;
-                headers.add("Content-Encoding: gzip");
-            };
-            else -> {
-                responseBody = body;
-            }
+        val encodingList = acceptEncoding.split(", ");
+        if (encodingList.contains("gzip")) {
+            responseBody = body;
+            headers.add("Content-Encoding: gzip");
+        }
+        else {
+            responseBody = body;
         }
     }
     else 
