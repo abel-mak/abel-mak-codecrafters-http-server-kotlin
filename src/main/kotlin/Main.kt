@@ -65,7 +65,7 @@ fun handleGetRequest(outputStream: OutputStream, path: String,
         okResponse(outputStream, requestHeaderMap["Accept-Encoding"], message);
     }
     else if (path.startsWith("/user-agent") == true) {
-        okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
+        okResponse(outputStream, requestHeaderMap["Accept-Encoding"], requestHeaderMap["User-Agent"] ?: "");
     }
     else if (path.startsWith("/files/") == true) {
         if (directory == null)
