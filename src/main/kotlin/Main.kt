@@ -9,7 +9,7 @@ fun gzip(content: String): String {
         GZIPOutputStream(byteStream)
         .bufferedWriter(Charsets.UTF_8)
         .use { it.write(content) }
-    return byteStream.toString();
+    return byteStream.toString("UTF-8");
 }
 
 fun formulateOkResponse( acceptEncoding: String?, body: String): String {
