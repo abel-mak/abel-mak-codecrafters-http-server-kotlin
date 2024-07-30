@@ -28,7 +28,7 @@ fun sendFileResponse(outputStream: OutputStream, file: File) {
 }
 
 fun createdResponse(outputStream: OutputStream) {
-    outputStream.write("HTTP/1.1 201 Created\r\n\r\n");
+    outputStream.write("HTTP/1.1 201 Created\r\n\r\n".toByteArray());
 }
 
 fun handleGetRequest(outputStream: OutputStream, path: String,
