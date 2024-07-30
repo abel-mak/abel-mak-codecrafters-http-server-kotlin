@@ -3,17 +3,40 @@ import java.io.*;
 import kotlin.concurrent.thread;
 import java.nio.file.Paths;
 
-fun okResponse(outputStream: OutputStream, body: String = "") {
-    val response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${body.count()}\r\n\r\n$body"
+fun formulateOkResponse( acceptEncoding: String?, body: String): String {
+    var headers = mutableListOf("HTTP/1.1 200 OK", "Content-Type: text/plain");
+    var responseBody: String;
+    if (acceptEncoding != null) {
+        when (acceptEncoding) {
+            "gzip" -> {
+                responseBody = body;
+                headers.add("Content-Encoding: gzip");
+                headers.add("Content-Length: ${responseBody.count()}");
+            };
+            else -> {
+                responseBody = body;
+                headers.add("Content-Length: ${responseBody.count()}");
+            }
+        }
+    }
+    else 
+        responseBody = body;
+    return "${headers.joinToString("\r\n")}\r\n\r\n$responseBody";
+}
+
+fun okResponse(outputStream: OutputStream, acceptEncoding: String?, body: String = "") {
+    //val responseBody = formulateBody(body, acceptEncoding);
+    val response = formulateOkResponse(acceptEncoding, body);
+    //val response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${responseBody.count()}\r\n\r\n$responseBody"
     outputStream.write(response.toByteArray());
 }
 
 fun notFoundResponse(outputStream: OutputStream) {
-   outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
+    outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
 }
 
 fun badRequestResponse(outputStream: OutputStream) {
-   outputStream.write("HTTP/1.1 400 Bad Request\r\n\r\n".toByteArray());
+    outputStream.write("HTTP/1.1 400 Bad Request\r\n\r\n".toByteArray());
 }
 
 fun sendFileResponse(outputStream: OutputStream, file: File) {
@@ -39,7 +62,7 @@ fun handleGetRequest(outputStream: OutputStream, path: String,
     else if (path.startsWith("/echo/") == true) {
         val message = path.replace("/echo/", "");
 
-        okResponse(outputStream, message);
+        okResponse(outputStream, requestHeaderMap["Accept-Encoding"], message);
     }
     else if (path.startsWith("/user-agent") == true) {
         okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
@@ -48,12 +71,10 @@ fun handleGetRequest(outputStream: OutputStream, path: String,
         if (directory == null)
             notFoundResponse(outputStream);
         else {
-
             val filePath: String = 
                 Paths.get(directory, path.replace("/files/", "")).toString();
             sendFileResponse(outputStream, File(filePath));
         }
-
     }
     else {
         notFoundResponse(outputStream); 
@@ -101,14 +122,6 @@ fun handleConnection(directory: String?, socket: Socket) {
         bufferedReader.read(buff, 0, contentLengthHeader.toInt());
         requestBody = String(buff);
     }
-   // while (true) {
-   //     if (bufferedReader.ready() == false)
-   //         break;
-   //     val buff = CharArray(255);
-   //     bufferedReader.read(buff, 0, 255);
-   //     requestBody += String(buff);
-   // }
-    print(requestBody.count());
 
     val reqFieldArr = requestHeaderArr.first().split(' ');
     if (reqFieldArr.count() == 3) {
@@ -133,7 +146,7 @@ fun main(args: Array<String>) {
 
     for (i in 0 until args.count()) {
         if (args[i] == "--directory" && i + 1 < args.count()) {
-            directory = args[i+1];
+            directory = args[i + 1];
             break;
         }
     }
@@ -153,7 +166,6 @@ fun main(args: Array<String>) {
                     thread {
                         handleConnection(directory, socket);
                     }                
-
             }
             catch (e: Exception) {
                 println("\nexecption occured ${e.message}"); 
