@@ -12,6 +12,10 @@ fun notFoundResponse(outputStream: OutputStream) {
    outputStream.write("HTTP/1.1 404 Not Found\r\n\r\n".toByteArray());
 }
 
+fun badRequestResponse(outputStream: OutputStream) {
+   outputStream.write("HTTP/1.1 400 Bad Request\r\n\r\n".toByteArray());
+}
+
 fun sendFileResponse(outputStream: OutputStream, file: File) {
     if (file.exists()) {
         val body = file.readText();
@@ -20,6 +24,50 @@ fun sendFileResponse(outputStream: OutputStream, file: File) {
     }
     else {
         notFoundResponse(outputStream);
+    }
+}
+
+fun createdResponse(outputStream: OutputStream) {
+    outputStream.write("HTTP/1.1 201 Created\r\n\r\n");
+}
+
+fun handleGetRequest(outputStream: OutputStream, path: String,
+        requestHeaderMap: MutableMap<String, String>, directory: String?) {
+    if (path == "/") {
+        outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
+    } 
+    else if (path.startsWith("/echo/") == true) {
+        val message = path.replace("/echo/", "");
+
+        okResponse(outputStream, message);
+    }
+    else if (path.startsWith("/user-agent") == true) {
+        okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
+    }
+    else if (path.startsWith("/files/") == true) {
+        if (directory == null)
+            notFoundResponse(outputStream);
+        else {
+
+            val filePath: String = 
+                Paths.get(directory, path.replace("/files/", "")).toString();
+            sendFileResponse(outputStream, File(filePath));
+        }
+
+    }
+    else {
+        notFoundResponse(outputStream); 
+    }
+} 
+
+fun handlePostRequest(outputStream: OutputStream, path: String, 
+        directory: String?, requestBody: String) {
+    if (path.startsWith("/files/") == true) {
+        val filename = path.replace("/files/", "");
+        if (filename != "" && directory != null) {
+            File(Paths.get(directory, filename).toString()).writeText(requestBody);
+            createdResponse(outputStream);
+        }
     }
 }
 
@@ -35,46 +83,37 @@ fun handleConnection(directory: String?, socket: Socket) {
         else
             break;
     }
+    var requestBody = "";
+    while (true) {
+        if (bufferedReader.ready() == false)
+            break;
+        val buff = CharArray(255);
+        bufferedReader.read(buff, 0, 255);
+        requestBody += String(buff);
+    }
+    print(requestBody);
+
     val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
 
     for (item in requestHeaderArr) {
-        if (item.startsWith("User-Agent") == true) {
-            requestHeaderMap["User-Agent"] = item.replace("User-Agent: ", "");
+        if (!item.startsWith("GET") && !item.startsWith("POST")) {
+            val (headerName, headerValue) = item.split(": ");
+            requestHeaderMap[headerName] = headerValue; 
         }
     }
-    if (requestHeaderArr.first().startsWith("GET")) {
-        val reqFieldArr = requestHeaderArr.first().split(' ');
-        if (reqFieldArr.count() == 3) {
-            val path = reqFieldArr[1];
-            val outputStream = socket.getOutputStream();
-            if (path == "/") {
-                outputStream.write("HTTP/1.1 200 OK\r\n\r\n".toByteArray());
-            } 
-            else if (path.startsWith("/echo/") == true) {
-                val message = path.replace("/echo/", "");
-
-                okResponse(outputStream, message);
+    val reqFieldArr = requestHeaderArr.first().split(' ');
+    if (reqFieldArr.count() == 3) {
+        val path = reqFieldArr[1];
+        val outputStream = socket.getOutputStream();
+        when(reqFieldArr.first()) {
+            "GET" -> handleGetRequest(outputStream, path, requestHeaderMap, directory);
+            "POST" -> handlePostRequest(outputStream, path, directory, requestBody);
+            else -> {
+                badRequestResponse(outputStream);
             }
-            else if (path.startsWith("/user-agent") == true) {
-                okResponse(outputStream, requestHeaderMap["User-Agent"] ?: "");
-            }
-            else if (path.startsWith("/files/") == true) {
-                if (directory == null)
-                    notFoundResponse(outputStream);
-                else {
-
-                    val filePath: String = 
-                        Paths.get(directory, path.replace("/files/", "")).toString();
-                    sendFileResponse(outputStream, File(filePath));
-                }
-
-            }
-            else {
-                notFoundResponse(outputStream); 
-            }
-            outputStream.close()
-                //socket.close();
         }
+        outputStream.close()
+            //socket.close();
     }
 }
 
