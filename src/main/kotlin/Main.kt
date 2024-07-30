@@ -2,6 +2,15 @@ import java.net.*;
 import java.io.*;
 import kotlin.concurrent.thread;
 import java.nio.file.Paths;
+import java.util.zip.GZIPOutputStream;
+
+fun gzip(content: String): String {
+    val byteStream = ByteArrayOutputStream();
+        GZIPOutputStream(byteStream)
+        .bufferedWriter(Charsets.UTF_8)
+        .use { it.write(content) }
+    return byteStream.toString();
+}
 
 fun formulateOkResponse( acceptEncoding: String?, body: String): String {
     var headers = mutableListOf("HTTP/1.1 200 OK", "Content-Type: text/plain");
@@ -9,7 +18,7 @@ fun formulateOkResponse( acceptEncoding: String?, body: String): String {
     if (acceptEncoding != null) {
         val encodingList = acceptEncoding.split(", ");
         if (encodingList.contains("gzip")) {
-            responseBody = body;
+            responseBody = gzip(body);
             headers.add("Content-Encoding: gzip");
         }
         else {
