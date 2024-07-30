@@ -61,7 +61,8 @@ fun handleGetRequest(outputStream: OutputStream, path: String,
 } 
 
 fun handlePostRequest(outputStream: OutputStream, path: String, 
-        directory: String?, requestBody: String) {
+        directory: String?,
+        requestBody: String) {
     if (path.startsWith("/files/") == true) {
         val filename = path.replace("/files/", "");
         if (filename != "" && directory != null) {
@@ -83,24 +84,32 @@ fun handleConnection(directory: String?, socket: Socket) {
         else
             break;
     }
-    var requestBody = "";
-    while (true) {
-        if (bufferedReader.ready() == false)
-            break;
-        val buff = CharArray(255);
-        bufferedReader.read(buff, 0, 255);
-        requestBody += String(buff);
-    }
-    print(requestBody);
 
     val requestHeaderMap: MutableMap<String, String> = mutableMapOf();
-
     for (item in requestHeaderArr) {
         if (!item.startsWith("GET") && !item.startsWith("POST")) {
             val (headerName, headerValue) = item.split(": ");
             requestHeaderMap[headerName] = headerValue; 
         }
     }
+
+    var requestBody = "";
+    val contentLengthHeader = requestHeaderMap["Content-Length"];
+    if (contentLengthHeader != null && contentLengthHeader != "") {
+        val buff = CharArray(contentLengthHeader.toInt());
+
+        bufferedReader.read(buff, 0, contentLengthHeader.toInt());
+        requestBody = String(buff);
+    }
+   // while (true) {
+   //     if (bufferedReader.ready() == false)
+   //         break;
+   //     val buff = CharArray(255);
+   //     bufferedReader.read(buff, 0, 255);
+   //     requestBody += String(buff);
+   // }
+    print(requestBody.count());
+
     val reqFieldArr = requestHeaderArr.first().split(' ');
     if (reqFieldArr.count() == 3) {
         val path = reqFieldArr[1];
