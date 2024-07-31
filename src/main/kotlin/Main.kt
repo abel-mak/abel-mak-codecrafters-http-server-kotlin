@@ -28,8 +28,6 @@ fun formulateOkResponse( acceptEncoding: String?, body: String): ByteArray {
         if (encodingList.contains("gzip")) {
             responseBody = (gzip(body));
             println(gzip(body));
-            //println(responseBody.toByteArray());
-            //println("decompressed: ${decompress(responseBody.toByteArray())}");
             headers.add("Content-Encoding: gzip");
         }
         else {
@@ -44,13 +42,10 @@ fun formulateOkResponse( acceptEncoding: String?, body: String): ByteArray {
     byteArrayOutputStream.write("${headers.joinToString("\r\n")}\r\n\r\n".toByteArray());
     byteArrayOutputStream.write(responseBody);
     return byteArrayOutputStream.toByteArray();
-    //return "${headers.joinToString("\r\n")}\r\n\r\n$responseBody";
 }
 
 fun okResponse(outputStream: OutputStream, acceptEncoding: String?, body: String = "") {
-    //val responseBody = formulateBody(body, acceptEncoding);
     val response = formulateOkResponse(acceptEncoding, body);
-    //val response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${responseBody.count()}\r\n\r\n$responseBody"
     outputStream.write(response);
 }
 
@@ -163,9 +158,8 @@ fun handleConnection(directory: String?, socket: Socket) {
 }
 
 fun main(args: Array<String>) {
-    // You can use print statements as follows for debugging, they'll be visible when running tests.
-    println("Logs from your program will appear here!")
-        var directory: String? = null;
+    println("Logs from your program will appear here!");
+    var directory: String? = null;
 
     for (i in 0 until args.count()) {
         if (args[i] == "--directory" && i + 1 < args.count()) {
@@ -173,12 +167,11 @@ fun main(args: Array<String>) {
             break;
         }
     }
-    // Uncomment this block to pass the first stage
-    var serverSocket = ServerSocket(4221)
-        //
-        //// Since the tester restarts your program quite often, setting SO_REUSEADDR
-        // // ensures that we don't run into 'Address already in use' errors
-        serverSocket.reuseAddress = true
+    var serverSocket = ServerSocket(4221);
+    //
+    //// Since the tester restarts your program quite often, setting SO_REUSEADDR
+    // // ensures that we don't run into 'Address already in use' errors
+    serverSocket.reuseAddress = true;
         //
 
         while (true) {
