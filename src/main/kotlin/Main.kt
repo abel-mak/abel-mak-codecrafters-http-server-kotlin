@@ -3,39 +3,55 @@ import java.io.*;
 import kotlin.concurrent.thread;
 import java.nio.file.Paths;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.GZIPInputStream;
 
-fun gzip(content: String): String {
+fun gzip(content: String): ByteArray {
     val byteStream = ByteArrayOutputStream();
         GZIPOutputStream(byteStream)
         .bufferedWriter(Charsets.UTF_8)
         .use { it.write(content) }
-    return byteStream.toString("UTF-8");
+    return byteStream.toByteArray();
 }
 
-fun formulateOkResponse( acceptEncoding: String?, body: String): String {
+fun decompress(content: ByteArray): String {
+    val byteStream = ByteArrayInputStream(content);
+    return GZIPInputStream(byteStream)
+        .bufferedReader(Charsets.UTF_8)
+        .use { it.readText() }
+}
+
+fun formulateOkResponse( acceptEncoding: String?, body: String): ByteArray {
     var headers = mutableListOf("HTTP/1.1 200 OK", "Content-Type: text/plain");
-    var responseBody: String;
+    var responseBody: ByteArray;
     if (acceptEncoding != null) {
         val encodingList = acceptEncoding.split(", ");
         if (encodingList.contains("gzip")) {
-            responseBody = gzip(body);
+            responseBody = (gzip(body));
+            println(gzip(body));
+            //println(responseBody.toByteArray());
+            //println("decompressed: ${decompress(responseBody.toByteArray())}");
             headers.add("Content-Encoding: gzip");
         }
         else {
-            responseBody = body;
+            responseBody = body.toByteArray();
         }
     }
     else 
-        responseBody = body;
+        responseBody = body.toByteArray();
     headers.add("Content-Length: ${responseBody.count()}");
-    return "${headers.joinToString("\r\n")}\r\n\r\n$responseBody";
+
+    val byteArrayOutputStream = ByteArrayOutputStream();
+    byteArrayOutputStream.write("${headers.joinToString("\r\n")}\r\n\r\n".toByteArray());
+    byteArrayOutputStream.write(responseBody);
+    return byteArrayOutputStream.toByteArray();
+    //return "${headers.joinToString("\r\n")}\r\n\r\n$responseBody";
 }
 
 fun okResponse(outputStream: OutputStream, acceptEncoding: String?, body: String = "") {
     //val responseBody = formulateBody(body, acceptEncoding);
     val response = formulateOkResponse(acceptEncoding, body);
     //val response = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: ${responseBody.count()}\r\n\r\n$responseBody"
-    outputStream.write(response.toByteArray());
+    outputStream.write(response);
 }
 
 fun notFoundResponse(outputStream: OutputStream) {
